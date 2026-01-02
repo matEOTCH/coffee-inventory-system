@@ -61,6 +61,15 @@ export default function IngresoLotes() {
     const incrementoStock = cantidad * insumo.conversion_factor
     const nuevoStock = insumo.current_stock_usage_units + incrementoStock
 
+    // --- NUEVA PARTE: REGISTRO DE MOVIMIENTO (LOG DE ENTRADA) ---
+    await supabase.from('stock_movements').insert([{
+      raw_material_id: insumo.id,
+      quantity_changed: incrementoStock, // Valor positivo para ingreso
+      movement_type: 'ingreso',
+      description: `Ingreso de Lote: ${cantidad} ${insumo.purchase_unit}s`
+    }])
+    // -----------------------------------------------------------
+
     const { error: stockError } = await supabase
       .from('raw_materials')
       .update({ current_stock_usage_units: nuevoStock })
