@@ -1,36 +1,39 @@
 import { serve } from "https://deno.land/std@0.131.0/http/server.ts"
 
 serve(async (req) => {
-  // 1. Recibimos los datos que nos envía el Webhook de la tabla
-  const { record } = await req.json()
+  try {
+    const { record } = await req.json()
+    
+    // --- LOGS DE DIAGNÓSTICO ---
+    console.log(`Evaluando insumo: ${record.name}`)
+    console.log(`Stock Actual: ${record.current_stock_usage_units}`)
+    console.log(`Nivel Crítico: ${record.min_stock_alert}`)
 
-  // 2. Lógica: ¿El stock actual es menor o igual al mínimo de alerta?
-  const stockActual = record.current_stock_usage_units;
-  const stockMinimo = record.min_stock_alert;
+    if (record.current_stock_usage_units <= record.min_stock_alert) {
+      console.log("¡NIVEL CRÍTICO DETECTADO! Enviando a Telegram...")
+      
+      const BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN')
+      const CHAT_ID = "1452926510"
 
-  if (stockActual <= stockMinimo) {
-    const BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN')
-    const CHAT_ID = "1452926510" // Tu ID que me pasaste
-
-    const mensaje = `🚨 *ALERTA DE STOCK BAJO* 🚨\n\n` +
-                    `Insumo: *${record.name}*\n` +
-                    `Stock Actual: ${stockActual} ${record.usage_unit}\n` +
-                    `Nivel de Alerta: ${stockMinimo} ${record.usage_unit}\n\n` +
-                    `🛒 *PEDIDO SUGERIDO:* ${record.order_quantity} ${record.purchase_unit}`;
-
-    // 3. Enviamos a Telegram
-    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: CHAT_ID,
-        text: mensaje,
-        parse_mode: 'Markdown'
+      const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: CHAT_ID,
+          text: `🚨 *STOCK BAJO:* ${record.name}\nQuedan: ${record.current_stock_usage_units} ${record.usage_unit}`,
+          parse_mode: 'Markdown'
+        })
       })
-    })
 
-    return new Response("Notificación enviada a Telegram", { status: 200 })
+      const resData = await response.json()
+      console.log("Respuesta de Telegram:", resData)
+    } else {
+      console.log("Stock suficiente. No se envía mensaje.")
+    }
+
+    return new Response("OK", { status: 200 })
+  } catch (err) {
+    console.error("ERROR EN LA FUNCIÓN:", err.message)
+    return new Response(err.message, { status: 500 })
   }
-
-  return new Response("Stock suficiente, no se requiere alerta", { status: 200 })
 })
