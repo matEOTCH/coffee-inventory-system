@@ -68,7 +68,7 @@ export default function ControlSuministros() {
         ) : (
           <div className="space-y-4">
             {insumos.map((item) => (
-              <div key={item.id} className="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-6 flex items-center justify-between group hover:shadow-xl transition-all">
+              <div key={item.id} className="bg-white rounded-4xl shadow-sm border border-gray-100 p-6 flex items-center justify-between group hover:shadow-xl transition-all">
                 
                 <div className="flex items-center space-x-6">
                   {/* Foto o Icono */}
